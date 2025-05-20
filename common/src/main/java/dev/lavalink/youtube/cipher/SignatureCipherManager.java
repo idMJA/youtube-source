@@ -40,9 +40,9 @@ import static com.sedmelluq.discord.lavaplayer.tools.ExceptionTools.throwWithDeb
 public class SignatureCipherManager {
   private static final Logger log = LoggerFactory.getLogger(SignatureCipherManager.class);
 
-  private static final Pattern TIMESTAMP_PATTERN = Pattern.compile("(signatureTimestamp|sts):(\\\\d+)");
-  private static final String REPO_URL = "https://raw.githubusercontent.com/she514552/youtube_player_scripts/refs/heads/main/scripts/";
-  private static final Pattern PLAYERID_PATTERN = Pattern.compile("\\\\/?player\\\\/([a-z0-9A-Z_]+)\\\\/player");
+  private static final Pattern TIMESTAMP_PATTERN = Pattern.compile("(?:signatureTimestamp|sts):(\\d+)");
+  private static final String REPO_URL = "https://raw.githubusercontent.com/she514552/player-script/refs/heads/main/scripts/";
+  private static final Pattern PLAYERID_PATTERN = Pattern.compile("/?player/([a-zA-Z0-9_]+)/player");
 
   private final ConcurrentMap<String, SignatureCipher> cipherCache;
   private final Set<String> dumpedScriptUrls;
@@ -215,7 +215,7 @@ public class SignatureCipherManager {
       scriptExtractionFailed(script, sourceUrl, ExtractionFailureType.TIMESTAMP_NOT_FOUND);
     }
 
-    String timestamp = scriptTimestamp.group(2);
+    String timestamp = scriptTimestamp.group(1);
 
     return new SignatureCipher(timestamp, script);
   }
