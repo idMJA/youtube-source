@@ -12,7 +12,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.util.EntityUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.mozilla.javascript.engine.RhinoScriptEngineFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,16 +25,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import static com.sedmelluq.discord.lavaplayer.tools.ExceptionTools.throwWithDebugInfo;
 
 /**
@@ -45,44 +40,9 @@ import static com.sedmelluq.discord.lavaplayer.tools.ExceptionTools.throwWithDeb
 public class SignatureCipherManager {
   private static final Logger log = LoggerFactory.getLogger(SignatureCipherManager.class);
 
-  private static final String VARIABLE_PART = "[a-zA-Z_\\$][a-zA-Z_0-9\\$]*";
-
-  private static final Pattern TIMESTAMP_PATTERN = Pattern.compile("(signatureTimestamp|sts):(\\d+)");
-
-  private static final Pattern GLOBAL_VARS_PATTERN = Pattern.compile(
-      "('use\\s*strict';)?" +
-          "(?<code>var\\s*(?<varname>[a-zA-Z0-9_$]+)\\s*=\\s*" +
-          "(?<value>(?:\"[^\"\\\\]*(?:\\\\.[^\"\\\\]*)*\"|'[^'\\\\]*(?:\\\\.[^'\\\\]*)*')" +
-          "\\.split\\((?:\"[^\"\\\\]*(?:\\\\.[^\"\\\\]*)*\"|'[^'\\\\]*(?:\\\\.[^'\\\\]*)*')\\)" +
-          "|\\[(?:(?:\"[^\"\\\\]*(?:\\\\.[^\"\\\\]*)*\"|'[^'\\\\]*(?:\\\\.[^'\\\\]*)*')\\s*,?\\s*)*\\]" +
-          "|\"[^\"]*\"\\.split\\(\"[^\"]*\"\\)))"
-  );
-
-  private static final Pattern ACTIONS_PATTERN = Pattern.compile(
-      "var\\s+([A-Za-z0-9_]+)\\s*=\\s*\\{\\s*[A-Za-z0-9_]+\\s*:\\s*function\\s*\\([^)]*\\)\\s*\\{[^{}]*(?:\\{[^{}]*}[^{}]*)*}\\s*,\\s*[A-Za-z0-9_]+\\s*:\\s*function\\s*\\([^)]*\\)\\s*\\{[^{}]*(?:\\{[^{}]*}[^{}]*)*}\\s*,\\s*[A-Za-z0-9_]+\\s*:\\s*function\\s*\\([^)]*\\)\\s*\\{[^{}]*(?:\\{[^{}]*}[^{}]*)*}\\s*};");
-
-  private static final Pattern SIG_FUNCTION_PATTERN = Pattern.compile(
-      "function(?:\\s+" + VARIABLE_PART + ")?\\((" + VARIABLE_PART + ")\\)\\{" +
-          VARIABLE_PART + "=" + VARIABLE_PART + ".*?\\(\\1,\\d+\\);return\\s*\\1.*};"
-  );
-
-  private static final Pattern N_FUNCTION_PATTERN = Pattern.compile(
-      "function\\(\\s*(" + VARIABLE_PART + ")\\s*\\)\\s*\\{" +
-          "var\\s*(" + VARIABLE_PART + ")=\\1\\[" + VARIABLE_PART + "\\[\\d+\\]\\]\\(" + VARIABLE_PART + "\\[\\d+\\]\\)" +
-          ".*?catch\\(\\s*(\\w+)\\s*\\)\\s*\\{" +
-          "\\s*return.*?\\+\\s*\\1\\s*}" +
-          "\\s*return\\s*\\2\\[" + VARIABLE_PART + "\\[\\d+\\]\\]\\(" + VARIABLE_PART + "\\[\\d+\\]\\)};",
-      Pattern.DOTALL
-  );
-
-  // old?
-  private static final Pattern functionPatternOld = Pattern.compile(
-      "function\\(\\s*(\\w+)\\s*\\)\\s*\\{" +
-          "var\\s*(\\w+)=\\1\\[" + VARIABLE_PART + "\\[\\d+\\]\\]\\(" + VARIABLE_PART + "\\[\\d+\\]\\)" +
-          ".*?catch\\(\\s*(\\w+)\\s*\\)\\s*\\{" +
-          "\\s*return.*?\\+\\s*\\1\\s*}" +
-          "\\s*return\\s*\\2\\[" + VARIABLE_PART + "\\[\\d+\\]\\]\\(" + VARIABLE_PART + "\\[\\d+\\]\\)};",
-      Pattern.DOTALL);
+  private static final Pattern TIMESTAMP_PATTERN = Pattern.compile("(signatureTimestamp|sts):(\\\\d+)");
+  private static final String REPO_URL = "https://raw.githubusercontent.com/she514552/youtube_player_scripts/refs/heads/main/scripts/";
+  private static final Pattern PLAYERID_PATTERN = Pattern.compile("\\\\/?player\\\\/([a-z0-9A-Z_]+)\\\\/player");
 
   private final ConcurrentMap<String, SignatureCipher> cipherCache;
   private final Set<String> dumpedScriptUrls;
@@ -123,16 +83,16 @@ public class SignatureCipherManager {
 
     if (!DataFormatTools.isNullOrEmpty(signature)) {
       try {
-        uri.setParameter(format.getSignatureKey(), cipher.apply(signature, scriptEngine));
+        uri.setParameter(format.getSignatureKey(), cipher.transform(signature, "decrypt_sig", scriptEngine));
       } catch (ScriptException | NoSuchMethodException e) {
-        dumpProblematicScript(cipherCache.get(playerScript).rawScript, playerScript, "Can't transform s parameter " + signature);
+        dumpProblematicScript(cipherCache.get(playerScript).rawScript, playerScript, "Can't transform s parameter " + signature + " with " + cipher.rawScript + " s function");
       }
     }
       
 
     if (!DataFormatTools.isNullOrEmpty(nParameter)) {
       try {
-        String transformed = cipher.transform(nParameter, scriptEngine);
+        String transformed = cipher.transform(nParameter, "decrypt_nsig", scriptEngine);
         String logMessage = null;
 
         if (transformed == null) {
@@ -152,7 +112,7 @@ public class SignatureCipherManager {
       } catch (ScriptException | NoSuchMethodException e) {
         // URLs can still be played without a resolved n parameter. It just means they're
         // throttled. But we shouldn't throw an exception anyway as it's not really fatal.
-        dumpProblematicScript(cipherCache.get(playerScript).rawScript, playerScript, "Can't transform n parameter " + nParameter + " with " + cipher.nFunction + " n function");
+        dumpProblematicScript(cipherCache.get(playerScript).rawScript, playerScript, "Can't transform n parameter " + nParameter + " with " + cipher.rawScript + " n function");
       }
     }
 
@@ -202,7 +162,14 @@ public class SignatureCipherManager {
       synchronized (cipherLoadLock) {
         log.debug("Parsing player script {}", cipherScriptUrl);
 
-        try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(parseTokenScriptUrl(cipherScriptUrl)))) {
+        URI url = parseTokenScriptUrl(cipherScriptUrl);
+        String playerId = this.extractPlayerId(url.toString());
+        if (playerId == null) {
+          throw new IllegalStateException("Failed to extract player ID: " + url.toString());
+        }
+        log.debug("Parsed player ID  " + playerId + " from " + url.toString());
+        String staticScriptUrl = REPO_URL + playerId + "/base.js";
+        try (CloseableHttpResponse response = httpInterface.execute(new HttpGet(staticScriptUrl))) {
           int statusCode = response.getStatusLine().getStatusCode();
 
           if (!HttpClientTools.isSuccessWithContent(statusCode)) {
@@ -219,11 +186,9 @@ public class SignatureCipherManager {
     return cipherKey;
   }
 
-  private List<String> getQuotedFunctions(@Nullable String... functionNames) {
-    return Stream.of(functionNames)
-        .filter(Objects::nonNull)
-        .map(Pattern::quote)
-        .collect(Collectors.toList());
+  public String extractPlayerId(@NotNull String scriptUrl) {
+    Matcher matcher = PLAYERID_PATTERN.matcher(scriptUrl);
+    return matcher.find() ? matcher.group(1) : null;
   }
 
   private void dumpProblematicScript(@NotNull String script, @NotNull String sourceUrl,
@@ -250,51 +215,14 @@ public class SignatureCipherManager {
       scriptExtractionFailed(script, sourceUrl, ExtractionFailureType.TIMESTAMP_NOT_FOUND);
     }
 
-    Matcher globalVarsMatcher = GLOBAL_VARS_PATTERN.matcher(script);
-
-    if (!globalVarsMatcher.find()) {
-      scriptExtractionFailed(script, sourceUrl, ExtractionFailureType.VARIABLES_NOT_FOUND);
-    }
-
-    Matcher sigActionsMatcher = ACTIONS_PATTERN.matcher(script);
-
-    if (!sigActionsMatcher.find()) {
-      scriptExtractionFailed(script, sourceUrl, ExtractionFailureType.SIG_ACTIONS_NOT_FOUND);
-    }
-
-    Matcher sigFunctionMatcher = SIG_FUNCTION_PATTERN.matcher(script);
-
-    if (!sigFunctionMatcher.find()) {
-      scriptExtractionFailed(script, sourceUrl, ExtractionFailureType.DECIPHER_FUNCTION_NOT_FOUND);
-    }
-
-    Matcher nFunctionMatcher = N_FUNCTION_PATTERN.matcher(script);
-
-    if (!nFunctionMatcher.find()) {
-      scriptExtractionFailed(script, sourceUrl, ExtractionFailureType.N_FUNCTION_NOT_FOUND);
-    }
-
     String timestamp = scriptTimestamp.group(2);
-    String globalVars = globalVarsMatcher.group("code");
-    String sigActions = sigActionsMatcher.group(0);
-    String sigFunction = sigFunctionMatcher.group(0);
-    String nFunction = nFunctionMatcher.group(0);
 
-    String nfParameterName = DataFormatTools.extractBetween(nFunction, "(", ")");
-    // Remove short-circuit that prevents n challenge transformation
-    nFunction = nFunction.replaceAll("if\\s*\\(typeof\\s*[^\\s()]+\\s*===?.*?\\)return " + nfParameterName + "\\s*;?", "");
-
-    return new SignatureCipher(timestamp, globalVars, sigActions, sigFunction, nFunction, script);
+    return new SignatureCipher(timestamp, script);
   }
 
   private void scriptExtractionFailed(String script, String sourceUrl, ExtractionFailureType failureType) {
     dumpProblematicScript(script, sourceUrl, "must find " + failureType.friendlyName);
     throw new ScriptExtractionException("Must find " + failureType.friendlyName + " from script: " + sourceUrl, failureType);
-  }
-
-  private static String extractDollarEscapedFirstGroup(@NotNull Pattern pattern, @NotNull String text) {
-    Matcher matcher = pattern.matcher(text);
-    return matcher.find() ? matcher.group(1).replace("$", "\\$") : null;
   }
 
   private static URI parseTokenScriptUrl(@NotNull String urlString) {
