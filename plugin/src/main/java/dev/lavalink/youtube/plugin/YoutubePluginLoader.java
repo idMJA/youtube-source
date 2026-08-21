@@ -10,6 +10,7 @@ import dev.arbjerg.lavalink.api.AudioPlayerManagerConfiguration;
 import dev.lavalink.youtube.YoutubeAudioSourceManager;
 import dev.lavalink.youtube.YoutubeSourceOptions;
 import dev.lavalink.youtube.clients.ClientOptions;
+import dev.lavalink.youtube.clients.Tv;
 import dev.lavalink.youtube.clients.skeleton.Client;
 import lavalink.server.config.RateLimitConfig;
 import lavalink.server.config.ServerConfig;
@@ -167,6 +168,12 @@ public class YoutubePluginLoader implements AudioPlayerManagerConfiguration {
             YoutubeRemoteCipherConfig cipherConfig = youtubeConfig.getRemoteCipher();
             YoutubeRemotePoTokenConfig poTokenConfig = youtubeConfig.getRemotePot();
 
+            YoutubeOauthConfig oauthConfig = youtubeConfig.getOauth();
+            if (oauthConfig != null && oauthConfig.getEnabled() && oauthConfig.getFallback()) {
+                log.debug("OAuth fallback enabled registering POT and OAuth TV clients");
+                clients = addTvOauthFallback(clients);
+            }
+
             if (cipherConfig != null && cipherConfig.getUrl() != null) {
                 log.info("Using remote cipher server with url \"{}\"", cipherConfig.getUrl());
                 sourceOptions.setRemoteCipher(cipherConfig.getUrl(), cipherConfig.getPassword(), cipherConfig.getUserAgent());
@@ -214,5 +221,21 @@ public class YoutubePluginLoader implements AudioPlayerManagerConfiguration {
         log.info("YouTube source initialised with clients: {} ", Arrays.stream(source.getClients()).map(Client::getIdentifier).collect(Collectors.joining(", ")));
         audioPlayerManager.registerSourceManager(source);
         return audioPlayerManager;
+    }
+
+    private Client[] addTvOauthFallback(Client[] clients) {
+        List<Client> resolved = new ArrayList<>();
+
+        for (Client client : clients) {
+            if (client instanceof Tv) {
+                Tv tv = (Tv) client;
+                resolved.add(new Tv(tv.getOptions(), false));
+                resolved.add(new Tv(tv.getOptions(), true));
+            } else {
+                resolved.add(client);
+            }
+        }
+
+        return resolved.toArray(new Client[0]);
     }
 }

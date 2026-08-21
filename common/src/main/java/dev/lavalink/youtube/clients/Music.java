@@ -78,7 +78,7 @@ public class Music extends MusicClient {
     @Override
     @NotNull
     public String getPlayerParams() {
-        return "2AMB";
+        return WEB_PLAYER_PARAMS;
     }
 
     @Override

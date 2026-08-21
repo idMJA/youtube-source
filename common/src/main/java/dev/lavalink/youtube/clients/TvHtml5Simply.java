@@ -23,6 +23,7 @@ public class TvHtml5Simply extends StreamingNonMusicClient {
     public static ClientConfig BASE_CONFIG = new ClientConfig()
             .withClientName("TVHTML5_SIMPLY")
             .withClientField("clientVersion", "1.0")
+            .withUserAgent("Mozilla/5.0 (PlayStation; PlayStation 4/12.00) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15")
             .withRootField("attestationRequest", new HashMap<String, Object>() {{ put("omitBotguardData", true); }});
 
     protected ClientOptions options;

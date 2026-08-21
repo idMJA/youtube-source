@@ -2,11 +2,7 @@ package dev.lavalink.youtube.clients;
 
 import com.sedmelluq.discord.lavaplayer.tools.JsonBrowser;
 import com.sedmelluq.discord.lavaplayer.tools.io.HttpInterface;
-import com.sedmelluq.discord.lavaplayer.track.AudioItem;
-import com.sedmelluq.discord.lavaplayer.track.AudioReference;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.BasicAudioPlaylist;
-import dev.lavalink.youtube.OptionDisabledException;
 import dev.lavalink.youtube.RemotePoToken;
 import dev.lavalink.youtube.YoutubeAudioSourceManager;
 import dev.lavalink.youtube.clients.skeleton.StreamingNonMusicClient;
@@ -24,8 +20,8 @@ import org.apache.http.client.utils.URIBuilder;
 public class MWeb extends StreamingNonMusicClient {
     public static ClientConfig BASE_CONFIG = new ClientConfig()
         .withClientName("MWEB")
-        .withClientField("clientVersion", "2.20240726.11.00");
-//        .withUserAgent("Mozilla/5.0 (iPad; CPU OS 16_7_10 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1,gzip(gfe)");
+        .withClientField("clientVersion", "2.20240726.11.00")
+        .withUserAgent("Mozilla/5.0 (iPad; CPU OS 16_7_10 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1,gzip(gfe)");
 
     protected ClientOptions options;
     private volatile String poToken;
@@ -36,11 +32,6 @@ public class MWeb extends StreamingNonMusicClient {
 
     public MWeb(@NotNull ClientOptions options) {
         this.options = options;
-    }
-
-    @Override
-    public boolean supportsSabrPlayback() {
-        return false;
     }
 
     @Override
@@ -100,7 +91,7 @@ public class MWeb extends StreamingNonMusicClient {
     @Override
     @NotNull
     public String getPlayerParams() {
-        return "2AMB";
+        return MOBILE_PLAYER_PARAMS;
     }
 
     @Override

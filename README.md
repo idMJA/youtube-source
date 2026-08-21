@@ -188,7 +188,7 @@ Currently, the following clients are available for use:
 |-------------------|--------------|-----------|-------------------------|------------------|-------------------------------|------------------------------------------------------|
 | `MUSIC`           | No           | Pot       | No                      | Yes              | Search                        | YouTube music search support via `ytmsearch:` prefix |
 | `WEB`             | Yes          | Pot       | No                      | Yes + Livestream | Video, Search, Playlist, Mix  |                                                      |
-| `MWEB`            | Yes          | Pot       | No                      | Yes + Livestream | Video, Search, Playlist, Mix  |                                                      |
+| `MWEB`            | Yes          | Pot       | Yes                     | Yes + Livestream | Video, Search, Playlist, Mix  |                                                      |
 | `WEBEMBEDDED`     | Yes          | Pot       | Limited                 | Yes + Livestream | Video                         |                                                      |
 | `ANDROID`         | Yes          | No        | No                      | Yes + Livestream | Video, Search, Playlist, Mix  | Heavily restricted, frequently dysfunctional         |
 | `ANDROID_MUSIC`   | Yes          | No        | No                      | Yes              | Video, Search, Mix            |                                                      |
@@ -246,6 +246,10 @@ plugins:
     oauth:
       # setting "enabled: true" is the bare minimum to get OAuth working.
       enabled: true
+
+      # If enabled, TV tries without OAuth first and retries with OAuth when
+      # the TV with PoT fails.
+      # fallback: true
 
       # if you have a refresh token, you may set it below (make sure to uncomment the line to apply it).
       # setting a valid refresh token will skip the OAuth flow entirely. See above note on how to retrieve

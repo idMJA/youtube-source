@@ -70,6 +70,17 @@ public class TrackFormats {
         return poToken;
     }
 
+    @Nullable
+    public StreamFormat getFormatByItag(int itag) {
+        for (StreamFormat format : formats) {
+            if (format.getItag() == itag && !format.isSabr()) {
+                return format;
+            }
+        }
+
+        return null;
+    }
+
     @NotNull
     public StreamFormat getBestFormat() {
         StreamFormat bestFormat = null;
