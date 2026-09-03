@@ -196,6 +196,8 @@ Currently, the following clients are available for use:
 | `IOS`             | No           | No        | No                      | Yes + Livestream | Video, Search, Playlist, Mix  |                                                      |
 | `TV`              | Yes          | Yes       | With OAuth              | Yes + Livestream | None                          | Playback requires sign-in                            |
 | `TVHTML5_SIMPLY`  | Yes          | Pot       | No                      | Yes + Livestream | Video, Search, Mix            |                                                      |
+| `TVHTML5_CAST`    | Yes          | Pot       | No                      | Yes + Livestream | Video, Search, Mix            |                                                      |
+| `VISIONOS`        | Yes          | No        | No                      | Yes + Livestream | Video, Search, Mix            |                                                      |
 
 > [!NOTE]
 > Clients that do not return Opus formats will require transcoding.
