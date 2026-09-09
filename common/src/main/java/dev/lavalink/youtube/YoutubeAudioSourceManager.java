@@ -193,7 +193,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
      * {@code null} is valid and will kickstart the oauth process.
      * Providing a refresh token will likely skip having to authenticate your account prior to making requests,
      * as long as the provided token is still valid.
-     * @param refreshToken The token to use for generating access tokens. Can be null.
+     * @param refreshTokens The tokens to use for generating access tokens. Can be null.
      * @param skipInitialization Whether linking of an account should be skipped, if you intend to provide a
      *                           refresh token later. This only applies on null/empty/invalid refresh tokens.
      *                           Valid refresh tokens will not be presented with an initialization prompt.
