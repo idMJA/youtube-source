@@ -127,22 +127,12 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
           processWithClient(localExecutor, httpInterface, client, 0);
           return;
         } catch (CannotBeLoaded e) {
-          throw e;
+          log.debug("Client \"{}\" cannot load track: {}, attempting next client", client.getIdentifier(), e.getMessage());
+          exceptions.add(new ClientException(e.getMessage(), client, e));
         } catch (Exception e) {
-          log.debug("Client \"{}\" failed during playback storing and proceeding", client.getIdentifier(), e);
-          if (e instanceof ScriptExtractionException) {
-            // If we're still early in playback, we can try another client
-            if (localExecutor.getPosition() >= BAD_STREAM_POSITION_THRESHOLD_MS) {
-              throw e;
-            }
-          } else if ("Not success status code: 403".equals(e.getMessage()) ||
-                  "Invalid status code for player api response: 400".equals(e.getMessage())) {
-            // As long as the executor position has not surpassed the threshold for which
-            // a stream is considered unrecoverable, we can try to renew the playback URL with
-            // another client.
-            if (localExecutor.getPosition() >= BAD_STREAM_POSITION_THRESHOLD_MS) {
-              throw e;
-            }
+          log.debug("Client \"{}\" failed during playback, attempting next client", client.getIdentifier(), e);
+          if (localExecutor.getPosition() >= BAD_STREAM_POSITION_THRESHOLD_MS) {
+            throw e;
           }
           exceptions.add(new ClientException(e.getMessage(), client, e));
         }
@@ -249,7 +239,7 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
     log.debug("Starting SABR track from client {} (itag {}): {}", client.getIdentifier(), format.getItag(), resolvedUrl);
 
     try (SabrStream stream = new SabrStream(httpInterface, resolvedUrl, ustreamerBytes, poTokenBytes,
-        clientInfo, formatId, format.isDrc(), format.getContentLength(), trackInfo.length)) {
+        clientInfo, formatId, formats.getDiscardVideoFormat(), format.isDrc(), format.getContentLength(), trackInfo.length)) {
       if (format.getType().getMimeType().endsWith("/webm")) {
         processDelegate(new MatroskaAudioTrack(trackInfo, stream), localExecutor);
       } else {

@@ -107,15 +107,36 @@ public abstract class StreamingNonMusicClient extends NonMusicClient {
             }
         }
 
+        // Extract lowest video format for SABR discard trick if SABR is available
+        dev.lavalink.youtube.sabr.FormatId lowestVideoFormat = null;
+        if (sabrAvailable) {
+            long lowestBitrate = Long.MAX_VALUE;
+            for (JsonBrowser formatJson : adaptiveFormats.values()) {
+                String mimeType = formatJson.get("mimeType").text();
+                if (mimeType != null && mimeType.startsWith("video/")) {
+                    long bitrate = formatJson.get("bitrate").asLong(Long.MAX_VALUE);
+                    if (bitrate < lowestBitrate) {
+                        lowestBitrate = bitrate;
+                        int itag = (int) formatJson.get("itag").asLong(-1);
+                        long lastModified = formatJson.get("lastModified").asLong(0);
+                        String xtags = formatJson.get("xtags").text();
+                        if (itag > 0) {
+                            lowestVideoFormat = new dev.lavalink.youtube.sabr.FormatId(itag, lastModified, xtags);
+                        }
+                    }
+                }
+            }
+        }
+
         if (formats.isEmpty() && anyFailures) {
             log.warn("Loading formats either failed to load or were skipped due to missing fields, json: {}", streamingData.format());
         }
 
-        return new TrackFormats(formats, playerScript.url, serverAbrStreamingUrl, ustreamerConfig, getPoToken());
+        return new TrackFormats(formats, playerScript.url, serverAbrStreamingUrl, ustreamerConfig, getPoToken(), lowestVideoFormat);
     }
 
     protected boolean preferSabrPlayback() {
-        return true;
+        return false;
     }
 
     protected boolean extractFormat(JsonBrowser formatJson,

@@ -49,12 +49,14 @@ public class SabrStream extends SeekableInputStream {
     private static final int ENABLED_TRACK_TYPES_AUDIO_ONLY = 1;
     // A hard cap to guard against pathological request loops that never make progress.
     private static final int MAX_REQUESTS = 10000;
+    private static final byte[] EBML_MAGIC = new byte[]{0x1A, 0x45, (byte) 0xDF, (byte) 0xA3};
 
     private final HttpInterface httpInterface;
     private final byte[] ustreamerConfig;
     private final byte[] poToken;
     private final SabrClientInfo clientInfo;
     private final FormatId audioFormatId;
+    private final FormatId discardVideoFormat;
     private final boolean drcEnabled;
 
     private final ChunkedByteBuffer buffer = new ChunkedByteBuffer();
@@ -76,6 +78,12 @@ public class SabrStream extends SeekableInputStream {
     private byte[] playbackCookie;
     private int streamProtectionStatus;
 
+    // In-order segment reassembly queue
+    private final Map<Integer, byte[]> pendingSegments = new HashMap<>();
+    private int nextSequenceNumber = 1;
+    private byte[] initBytes = null;
+    private boolean initBytesWritten = false;
+
     // SABR context state (mainly for ad handling).
     private final Map<Integer, byte[]> sabrContextValues = new HashMap<>();
     private final Set<Integer> activeSabrContextTypes = new HashSet<>();
@@ -92,6 +100,19 @@ public class SabrStream extends SeekableInputStream {
                       boolean drcEnabled,
                       long contentLength,
                       long durationMs) {
+        this(httpInterface, serverAbrStreamingUrl, ustreamerConfig, poToken, clientInfo, audioFormatId, null, drcEnabled, contentLength, durationMs);
+    }
+
+    public SabrStream(@NotNull HttpInterface httpInterface,
+                      @NotNull URI serverAbrStreamingUrl,
+                      @NotNull byte[] ustreamerConfig,
+                      @Nullable byte[] poToken,
+                      @NotNull SabrClientInfo clientInfo,
+                      @NotNull FormatId audioFormatId,
+                      @Nullable FormatId discardVideoFormat,
+                      boolean drcEnabled,
+                      long contentLength,
+                      long durationMs) {
         super(contentLength, MAX_SKIP_DISTANCE);
         this.httpInterface = httpInterface;
         this.serverAbrStreamingUrl = serverAbrStreamingUrl;
@@ -99,6 +120,7 @@ public class SabrStream extends SeekableInputStream {
         this.poToken = poToken;
         this.clientInfo = clientInfo;
         this.audioFormatId = audioFormatId;
+        this.discardVideoFormat = discardVideoFormat;
         this.drcEnabled = drcEnabled;
         this.durationMs = durationMs > 0 ? durationMs : Long.MAX_VALUE;
     }
@@ -243,6 +265,7 @@ public class SabrStream extends SeekableInputStream {
         HttpPost request = new HttpPost(url);
         request.setHeader("Content-Type", "application/x-protobuf");
         request.setHeader("Accept", "application/vnd.yt-ump");
+        request.setHeader("Accept-Encoding", "identity");
         request.setEntity(new ByteArrayEntity(body));
 
         byte[] responseBytes;
@@ -503,14 +526,20 @@ public class SabrStream extends SeekableInputStream {
             return;
         }
 
-        int headerId = data[0] & 0xFF;
-        PartialSegment segment = partialSegmentQueue.get(headerId);
-
-        if (segment == null) {
+        long[] varintResult = UmpReader.readVarint(data, 0);
+        if (varintResult == null) {
             return;
         }
 
-        segment.data.write(data, 1, data.length - 1);
+        int headerId = (int) varintResult[0];
+        int varintLen = (int) varintResult[1];
+        PartialSegment segment = partialSegmentQueue.get(headerId);
+
+        if (segment == null || data.length <= varintLen) {
+            return;
+        }
+
+        segment.data.write(data, varintLen, data.length - varintLen);
     }
 
     private void handleMediaEnd(@NotNull byte[] data) {
@@ -518,7 +547,12 @@ public class SabrStream extends SeekableInputStream {
             return;
         }
 
-        int headerId = data[0] & 0xFF;
+        long[] varintResult = UmpReader.readVarint(data, 0);
+        if (varintResult == null) {
+            return;
+        }
+
+        int headerId = (int) varintResult[0];
         PartialSegment segment = partialSegmentQueue.remove(headerId);
 
         if (segment == null) {
@@ -533,10 +567,44 @@ public class SabrStream extends SeekableInputStream {
             return;
         }
 
-        buffer.append(segmentBytes);
+        if (segment.header.isInitSeg || segment.segmentNumber == 0) {
+            initBytes = segmentBytes;
+        } else {
+            pendingSegments.put(segment.segmentNumber, segmentBytes);
+        }
+
         downloadedSegments.add(segment.segmentNumber);
         downloadedDurationMs += segment.header.effectiveDurationMs();
         lastMediaHeaders.add(segment.header);
+
+        drainSegments();
+    }
+
+    private void drainSegments() {
+        // If init segment was received and not written yet, write it first
+        if (initBytes != null && !initBytesWritten) {
+            buffer.append(initBytes);
+            initBytesWritten = true;
+        }
+
+        // Emit consecutive segments in order (nextSequenceNumber, nextSequenceNumber + 1, ...)
+        while (pendingSegments.containsKey(nextSequenceNumber)) {
+            byte[] seg = pendingSegments.remove(nextSequenceNumber);
+            if (!initBytesWritten && isSelfInitializingWebM(seg)) {
+                // WebM Opus is self-initializing if the first segment begins with EBML magic
+                initBytesWritten = true;
+            }
+            buffer.append(seg);
+            nextSequenceNumber++;
+        }
+    }
+
+    private static boolean isSelfInitializingWebM(@NotNull byte[] data) {
+        if (data.length < 4) {
+            return false;
+        }
+        return data[0] == EBML_MAGIC[0] && data[1] == EBML_MAGIC[1]
+            && data[2] == EBML_MAGIC[2] && data[3] == EBML_MAGIC[3];
     }
     //</editor-fold>
 
@@ -572,6 +640,11 @@ public class SabrStream extends SeekableInputStream {
 
         // preferred_audio_format_ids (field 16)
         audioFormatId.writeTo(request, 16);
+
+        // preferred_video_format_ids (field 17) - video discard trick
+        if (discardVideoFormat != null) {
+            discardVideoFormat.writeTo(request, 17);
+        }
 
         // streamer_context (field 19)
         request.writeMessage(19, buildStreamerContext());
@@ -644,6 +717,16 @@ public class SabrStream extends SeekableInputStream {
             lastMediaHeaders.clear();
         }
 
+        if (discardVideoFormat != null) {
+            BufferedRangeData discardRange = new BufferedRangeData();
+            discardRange.formatId = discardVideoFormat;
+            discardRange.startTimeMs = 0;
+            discardRange.durationMs = Integer.MAX_VALUE;
+            discardRange.startSegmentIndex = 0;
+            discardRange.endSegmentIndex = Integer.MAX_VALUE;
+            ranges.add(discardRange);
+        }
+
         return ranges;
     }
 
@@ -664,8 +747,10 @@ public class SabrStream extends SeekableInputStream {
     @NotNull
     private static URI withRequestNumber(@NotNull URI url, int requestNumber) throws IOException {
         try {
-            return new URIBuilder(url).setParameter("rn", Integer.toString(requestNumber)).build();
-        } catch (URISyntaxException e) {
+            String urlStr = url.toString();
+            String sep = urlStr.contains("?") ? "&" : "?";
+            return URI.create(urlStr + sep + "rn=" + requestNumber);
+        } catch (IllegalArgumentException e) {
             throw new IOException("Failed to build SABR request URL", e);
         }
     }

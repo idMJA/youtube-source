@@ -14,6 +14,7 @@ public class TrackFormats {
     private final String serverAbrStreamingUrl;
     private final String videoPlaybackUstreamerConfig;
     private final String poToken;
+    private final dev.lavalink.youtube.sabr.FormatId discardVideoFormat;
 
     public TrackFormats(@NotNull List<StreamFormat> formats,
                         @NotNull String playerScriptUrl) {
@@ -24,7 +25,7 @@ public class TrackFormats {
                         @NotNull String playerScriptUrl,
                         @Nullable String serverAbrStreamingUrl,
                         @Nullable String videoPlaybackUstreamerConfig) {
-        this(formats, playerScriptUrl, serverAbrStreamingUrl, videoPlaybackUstreamerConfig, null);
+        this(formats, playerScriptUrl, serverAbrStreamingUrl, videoPlaybackUstreamerConfig, null, null);
     }
 
     public TrackFormats(@NotNull List<StreamFormat> formats,
@@ -32,11 +33,26 @@ public class TrackFormats {
                         @Nullable String serverAbrStreamingUrl,
                         @Nullable String videoPlaybackUstreamerConfig,
                         @Nullable String poToken) {
+        this(formats, playerScriptUrl, serverAbrStreamingUrl, videoPlaybackUstreamerConfig, poToken, null);
+    }
+
+    public TrackFormats(@NotNull List<StreamFormat> formats,
+                        @NotNull String playerScriptUrl,
+                        @Nullable String serverAbrStreamingUrl,
+                        @Nullable String videoPlaybackUstreamerConfig,
+                        @Nullable String poToken,
+                        @Nullable dev.lavalink.youtube.sabr.FormatId discardVideoFormat) {
         this.formats = formats;
         this.playerScriptUrl = playerScriptUrl;
         this.serverAbrStreamingUrl = serverAbrStreamingUrl;
         this.videoPlaybackUstreamerConfig = videoPlaybackUstreamerConfig;
         this.poToken = poToken;
+        this.discardVideoFormat = discardVideoFormat;
+    }
+
+    @Nullable
+    public dev.lavalink.youtube.sabr.FormatId getDiscardVideoFormat() {
+        return this.discardVideoFormat;
     }
 
     @NotNull

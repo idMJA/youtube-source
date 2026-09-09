@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -197,8 +198,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
      *                           refresh token later. This only applies on null/empty/invalid refresh tokens.
      *                           Valid refresh tokens will not be presented with an initialization prompt.
      */
-    public void useOauth2(@Nullable String refreshToken, boolean skipInitialization) {
-        oauth2Handler.setRefreshToken(refreshToken, skipInitialization);
+    public void useOauth2(@Nullable List<String> refreshTokens, boolean skipInitialization) {
+        oauth2Handler.setRefreshTokens(refreshTokens != null ? refreshTokens : Collections.emptyList(), skipInitialization);
 
         if (Arrays.stream(clients).noneMatch(Client::supportsOAuth)) {
             log.warn("OAuth has been enabled without registering any OAuth-compatible clients. " +
@@ -207,9 +208,18 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
         }
     }
 
+    public void useOauth2(@Nullable String refreshToken, boolean skipInitialization) {
+        useOauth2(refreshToken != null ? Collections.singletonList(refreshToken) : Collections.emptyList(), skipInitialization);
+    }
+
     @Nullable
     public String getOauth2RefreshToken() {
         return oauth2Handler.getRefreshToken();
+    }
+
+    @Nullable
+    public List<String> getOauth2RefreshTokens() {
+        return oauth2Handler.getRefreshTokens();
     }
 
     @Override
@@ -262,7 +272,8 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
                 try {
                     item = router.route(client);
                 } catch (CannotBeLoaded cbl) {
-                    throw ExceptionTools.wrapUnfriendlyExceptions("This video cannot be loaded.", Severity.SUSPICIOUS, cbl.getCause());
+                    log.debug("Client \"{}\" cannot load track: {}, storing and proceeding...", client.getIdentifier(), cbl.getMessage());
+                    exceptions.add(new ClientException(cbl.getMessage(), client, cbl));
                 } catch (Throwable t) {
                     log.debug("Client \"{}\" threw a non-fatal exception, storing and proceeding...", client.getIdentifier(), t);
                     exceptions.add(new ClientException(t.getMessage(), client, t));

@@ -235,9 +235,12 @@ source.useOauth2(null, false);
 
 // If you already have a refresh token, you can instruct the source to use it, skipping the OAuth flow entirely.
 // You can also set the `skipInitialization` parameter, which skips the OAuth flow. This should only be used
-// if you intend to supply a refresh token later on. You **must** either complete the OAuth flow or supply
+// if you intend to supply a refresh token later. You **must** either complete the OAuth flow or supply
 // a refresh token for OAuth integration to work.
 source.useOauth2("your refresh token", true);
+
+// Or supply multiple refresh tokens to enable round-robin rotation across multiple burner accounts:
+// source.useOauth2(List.of("refresh token 1", "refresh token 2"), true);
 ```
 
 ### Lavalink
@@ -249,14 +252,13 @@ plugins:
       # setting "enabled: true" is the bare minimum to get OAuth working.
       enabled: true
 
-      # If enabled, TV tries without OAuth first and retries with OAuth when
-      # the TV with PoT fails.
-      # fallback: true
-
-      # if you have a refresh token, you may set it below (make sure to uncomment the line to apply it).
-      # setting a valid refresh token will skip the OAuth flow entirely. See above note on how to retrieve
-      # your refreshToken.
+      # If you have a single refresh token:
       # refreshToken: "paste your refresh token here if applicable"
+      #
+      # Or specify multiple refresh tokens for automatic round-robin account rotation:
+      # refreshToken:
+      #   - "paste first refresh token here"
+      #   - "paste second refresh token here"
 
       # Set this if you don't want the OAuth flow to be triggered, if you intend to supply a refresh token later.
       # Initialization is skipped automatically if a valid refresh token is supplied. Leave this commented if you're

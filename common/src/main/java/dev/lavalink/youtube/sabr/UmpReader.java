@@ -62,65 +62,74 @@ public class UmpReader {
     }
 
     private long readVarint() {
-        if (pos >= data.length) {
+        long[] result = readVarint(data, pos);
+        if (result == null) {
             return -1;
         }
+        pos += (int) result[1];
+        return result[0];
+    }
 
-        int firstByte = data[pos] & 0xFF;
+    /**
+     * Reads a YouTube-style UMP variable-length integer from {@code buf} starting at {@code offset}.
+     *
+     * @param buf The byte buffer.
+     * @param offset The starting offset.
+     * @return An array {@code [value, bytesConsumed]}, or {@code null} if buffer has insufficient bytes.
+     */
+    public static long[] readVarint(byte[] buf, int offset) {
+        if (buf == null || offset >= buf.length) {
+            return null;
+        }
+
+        int firstByte = buf[offset] & 0xFF;
         int byteLength = firstByte < 128 ? 1
             : firstByte < 192 ? 2
             : firstByte < 224 ? 3
             : firstByte < 240 ? 4
             : 5;
 
-        if (pos + byteLength > data.length) {
-            return -1;
+        if (offset + byteLength > buf.length) {
+            return null;
         }
 
         long value;
 
         switch (byteLength) {
             case 1:
-                value = data[pos] & 0xFF;
-                pos += 1;
+                value = firstByte;
                 break;
             case 2: {
-                int b1 = data[pos] & 0xFF;
-                int b2 = data[pos + 1] & 0xFF;
+                int b1 = buf[offset] & 0xFF;
+                int b2 = buf[offset + 1] & 0xFF;
                 value = (b1 & 0x3F) + 64L * b2;
-                pos += 2;
                 break;
             }
             case 3: {
-                int b1 = data[pos] & 0xFF;
-                int b2 = data[pos + 1] & 0xFF;
-                int b3 = data[pos + 2] & 0xFF;
+                int b1 = buf[offset] & 0xFF;
+                int b2 = buf[offset + 1] & 0xFF;
+                int b3 = buf[offset + 2] & 0xFF;
                 value = (b1 & 0x1F) + 32L * (b2 + 256L * b3);
-                pos += 3;
                 break;
             }
             case 4: {
-                int b1 = data[pos] & 0xFF;
-                int b2 = data[pos + 1] & 0xFF;
-                int b3 = data[pos + 2] & 0xFF;
-                int b4 = data[pos + 3] & 0xFF;
+                int b1 = buf[offset] & 0xFF;
+                int b2 = buf[offset + 1] & 0xFF;
+                int b3 = buf[offset + 2] & 0xFF;
+                int b4 = buf[offset + 3] & 0xFF;
                 value = (b1 & 0x0F) + 16L * (b2 + 256L * (b3 + 256L * b4));
-                pos += 4;
                 break;
             }
             default: {
-                // 5-byte: the low bits of the first byte are ignored; the remaining 4 bytes
-                // are a little-endian uint32.
-                int b2 = data[pos + 1] & 0xFF;
-                int b3 = data[pos + 2] & 0xFF;
-                int b4 = data[pos + 3] & 0xFF;
-                int b5 = data[pos + 4] & 0xFF;
+                int b2 = buf[offset + 1] & 0xFF;
+                int b3 = buf[offset + 2] & 0xFF;
+                int b4 = buf[offset + 3] & 0xFF;
+                int b5 = buf[offset + 4] & 0xFF;
                 value = (b2 + 256L * (b3 + 256L * (b4 + 256L * b5))) & 0xFFFFFFFFL;
-                pos += 5;
                 break;
             }
         }
 
-        return value;
+        return new long[]{value, byteLength};
     }
 }
