@@ -83,23 +83,6 @@ public class TvHtml5Simply extends StreamingNonMusicClient {
 
     @Override
     @NotNull
-    public URI transformPlaybackUri(@NotNull URI originalUri, @NotNull URI resolvedPlaybackUri,
-                                    @Nullable String poToken) {
-        if (poToken == null) {
-            return resolvedPlaybackUri;
-        }
-
-        try {
-            URIBuilder builder = new URIBuilder(resolvedPlaybackUri);
-            builder.addParameter("pot", poToken);
-            return builder.build();
-        } catch (URISyntaxException e) {
-            return resolvedPlaybackUri;
-        }
-    }
-
-    @Override
-    @NotNull
     public String getPlayerParams() {
         return WEB_PLAYER_PARAMS;
     }

@@ -42,8 +42,7 @@ public class Web extends StreamingNonMusicClient {
     protected volatile long lastConfigUpdate = -1;
 
     protected ClientOptions options;
-    protected volatile String requestPoToken;
-    protected volatile String requestVisitorData;
+    protected volatile String poToken;
 
     public Web() {
         this(ClientOptions.DEFAULT);
@@ -122,11 +121,8 @@ public class Web extends StreamingNonMusicClient {
         }
 
         ClientConfig config = BASE_CONFIG.copy();
-        if (requestVisitorData != null) {
-            config.withVisitorData(requestVisitorData);
-        }
-        if (requestPoToken != null) {
-            config.putOnceAndJoin(config.getRoot(), "serviceIntegrityDimensions").put("poToken", requestPoToken);
+        if (poToken != null) {
+            config.putOnceAndJoin(config.getRoot(), "serviceIntegrityDimensions").put("poToken", poToken);
         }
         return config;
     }
@@ -140,28 +136,7 @@ public class Web extends StreamingNonMusicClient {
     public void preparePlayback(@NotNull YoutubeAudioSourceManager source, @NotNull HttpInterface httpInterface,
                                 @NotNull String videoId) throws IOException {
         RemotePoToken.Result result = source.generatePoToken(httpInterface, videoId);
-        if (result != null) requestPoToken = result.getPoToken();
-    }
-
-    @Override
-    @NotNull
-    public URI transformPlaybackUri(@NotNull URI originalUri,
-                                    @NotNull URI resolvedPlaybackUri,
-                                    @Nullable String poToken) {
-        if (poToken == null) {
-            return resolvedPlaybackUri;
-        }
-
-        log.debug("Applying 'pot' parameter on playback URI: {}", resolvedPlaybackUri);
-        URIBuilder builder = new URIBuilder(resolvedPlaybackUri);
-        builder.addParameter("pot", poToken);
-
-        try {
-            return builder.build();
-        } catch (URISyntaxException e) {
-            log.debug("Failed to apply 'pot' parameter.", e);
-            return resolvedPlaybackUri;
-        }
+        poToken = result == null ? null : result.getPoToken();
     }
 
     @Override
@@ -224,14 +199,20 @@ public class Web extends StreamingNonMusicClient {
                 .get("sectionListRenderer")
                 .get("contents");
 
-        JsonBrowser playlistVideoList = sectionList.index(0)
+        JsonBrowser itemSectionContents = sectionList.index(0)
                 .get("itemSectionRenderer")
-                .get("contents")
+                .get("contents");
+
+        JsonBrowser playlistVideoList = itemSectionContents
                 .index(0)
                 .get("playlistVideoListRenderer");
 
         if (!playlistVideoList.isNull()) {
             return playlistVideoList;
+        }
+
+        if (!itemSectionContents.isNull()) {
+            return itemSectionContents;
         }
 
         return sectionList;
@@ -334,7 +315,7 @@ public class Web extends StreamingNonMusicClient {
     @Override
     @Nullable
     public String getPoToken() {
-        return requestPoToken;
+        return poToken;
     }
 
     @Override

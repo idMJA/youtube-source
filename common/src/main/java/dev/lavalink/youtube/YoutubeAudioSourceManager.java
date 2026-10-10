@@ -174,7 +174,16 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
 
     @Nullable
     public RemotePoToken.Result generatePoToken(@NotNull HttpInterface httpInterface, @Nullable String contentBinding) throws IOException {
-        return remotePoToken == null ? null : remotePoToken.generate(httpInterface, contentBinding);
+        if (remotePoToken == null) {
+            return null;
+        }
+
+        try {
+            return remotePoToken.generate(httpInterface, contentBinding);
+        } catch (Exception e) {
+            log.warn("Failed to generate PoToken from remote server: {}. Continuing without PoToken.", e.getMessage());
+            return null;
+        }
     }
 
     @Nullable
@@ -259,11 +268,11 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
                 }
 
                 boolean shouldLogOauthWarning = client.supportsOAuth() && !loggedOauthClientNoAccountWarning &&
-                    !oauth2Handler.hasAccessToken() && client.getOptions().getPlayback();
+                    !oauth2Handler.hasAccessToken() && remotePoToken == null && client.getOptions().getPlayback();
 
                 if (shouldLogOauthWarning) {
                     loggedOauthClientNoAccountWarning = true;
-                    log.warn("!!! You are using an OAuth-enabled client without a valid OAuth token! This client may not play videos!");
+                    log.warn("!!! No valid oauth token or remote PoToken server configured! This client may fail or fall back to legacy format (itag 18)!");
                 }
 
                 log.debug("Attempting to load {} with client \"{}\"", reference.identifier, client.getIdentifier());
@@ -272,8 +281,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
                 try {
                     item = router.route(client);
                 } catch (CannotBeLoaded cbl) {
-                    log.debug("Client \"{}\" cannot load track: {}, storing and proceeding...", client.getIdentifier(), cbl.getMessage());
-                    exceptions.add(new ClientException(cbl.getMessage(), client, cbl));
+                    throw ExceptionTools.wrapUnfriendlyExceptions("This video cannot be loaded.", Severity.SUSPICIOUS, cbl.getCause());
                 } catch (Throwable t) {
                     log.debug("Client \"{}\" threw a non-fatal exception, storing and proceeding...", client.getIdentifier(), t);
                     exceptions.add(new ClientException(t.getMessage(), client, t));

@@ -127,7 +127,14 @@ public class TrackFormats {
             return false;
         } else if (other == null) {
             return true;
-        } else if (MIME_AUDIO_WEBM.equals(info.mimeType) && format.getAudioChannels() > 2) {
+        }
+
+        // Format without URL is SABR
+        if (format.getUrl() == null && other.getUrl() != null) {
+            return false;
+        }
+
+        if (MIME_AUDIO_WEBM.equals(info.mimeType) && format.getAudioChannels() > 2) {
             // Opus with more than 2 audio channels is unsupported by LavaPlayer currently.
             return false;
         } else if (info.ordinal() != other.getInfo().ordinal()) {

@@ -21,7 +21,7 @@ import org.apache.http.client.utils.URIBuilder;
 public class MWeb extends StreamingNonMusicClient {
     public static ClientConfig BASE_CONFIG = new ClientConfig()
         .withClientName("MWEB")
-        .withClientField("clientVersion", "2.20240726.11.00")
+        .withClientField("clientVersion", "2.20260904.01.00")
         .withUserAgent("Mozilla/5.0 (iPad; CPU OS 16_7_10 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1,gzip(gfe)");
 
     protected ClientOptions options;
@@ -65,33 +65,13 @@ public class MWeb extends StreamingNonMusicClient {
                                 @NotNull HttpInterface httpInterface,
                                 @NotNull String videoId) throws IOException {
         RemotePoToken.Result result = source.generatePoToken(httpInterface, videoId);
-        if (result != null) {
-            poToken = result.getPoToken();
-        }
+        poToken = result == null ? null : result.getPoToken();
     }
 
     @Override
     @Nullable
     public String getPoToken() {
         return poToken;
-    }
-
-    @Override
-    @NotNull
-    public URI transformPlaybackUri(@NotNull URI originalUri,
-                                    @NotNull URI resolvedPlaybackUri,
-                                    @Nullable String token) {
-        if (token == null) {
-            return resolvedPlaybackUri;
-        }
-
-        try {
-            return new URIBuilder(resolvedPlaybackUri)
-                .addParameter("pot", token)
-                .build();
-        } catch (URISyntaxException e) {
-            return resolvedPlaybackUri;
-        }
     }
 
     @Override

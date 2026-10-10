@@ -120,6 +120,12 @@ public abstract class NonMusicClient implements Client {
         if (isEmbedded() || (!supportsOAuth() && (status == null || status != PlayabilityStatus.NON_EMBEDDABLE))) {
             config.withClientField("clientScreen", "EMBED")
                 .withThirdPartyEmbedUrl(DEFAULT_EMBED_URL);
+
+            // For embedded clients, fetch and include encryptedHostFlags to avoid playback restrictions.
+            String encryptedHostFlags = fetchEncryptedHostFlags(videoId, config.getVisitorData());
+            if (encryptedHostFlags != null) {
+                config.withEncryptedHostFlags(encryptedHostFlags);
+            }
         }
 
         config.withRootField("videoId", videoId)
@@ -130,14 +136,6 @@ public abstract class NonMusicClient implements Client {
 
         if (params != null) {
             config.withRootField("params", params);
-        }
-
-        // For embedded clients, fetch and include encryptedHostFlags to avoid playback restrictions.
-        if (isEmbedded() || (!supportsOAuth() && (status == null || status != PlayabilityStatus.NON_EMBEDDABLE))) {
-            String encryptedHostFlags = fetchEncryptedHostFlags(videoId);
-            if (encryptedHostFlags != null) {
-                config.withEncryptedHostFlags(encryptedHostFlags);
-            }
         }
 
         String payload = config.setAttributes(httpInterface).toJsonString();
@@ -195,20 +193,36 @@ public abstract class NonMusicClient implements Client {
     }
 
     /**
+     * @param videoId The video ID to fetch the embed page for.
+     * @return The encryptedHostFlags value, or null if not found.
+     * @see #fetchEncryptedHostFlags(String, String)
+     */
+    @Nullable
+    protected String fetchEncryptedHostFlags(@NotNull String videoId) {
+        return fetchEncryptedHostFlags(videoId, null);
+    }
+
+    /**
      * Fetches the encryptedHostFlags from the YouTube embed page.
      * This is required for embedded clients to avoid playback restrictions.
      *
      * @param videoId The video ID to fetch the embed page for.
+     * @param visitorData The visitor data that the player request identifies with,
+     *                    or {@code null} to load the page as an anonymous visitor.
      * @return The encryptedHostFlags value, or null if not found.
      */
     @Nullable
-    protected String fetchEncryptedHostFlags(@NotNull String videoId) {
+    protected String fetchEncryptedHostFlags(@NotNull String videoId, @Nullable String visitorData) {
         String embedUrl = "https://www.youtube.com/embed/" + videoId + "?html5=1";
 
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             HttpGet request = new HttpGet(embedUrl);
             request.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
             request.setHeader("Referer", DEFAULT_EMBED_URL);
+
+            if (visitorData != null) {
+                request.setHeader("X-Goog-Visitor-Id", visitorData);
+            }
 
             HttpResponse response = httpClient.execute(request);
             String html = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
@@ -573,6 +587,7 @@ public abstract class NonMusicClient implements Client {
             throw new OptionDisabledException("Video loading is disabled for this client");
         }
 
+        preparePlayback(source, httpInterface, videoId);
         JsonBrowser json = loadTrackInfoFromInnertube(source, httpInterface, videoId, null, false);
         JsonBrowser playabilityStatus = json.get("playabilityStatus");
         JsonBrowser videoDetails = json.get("videoDetails");

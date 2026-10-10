@@ -19,11 +19,18 @@ public class WebEmbedded extends Web {
 
     public static ClientConfig BASE_CONFIG = new ClientConfig()
         .withClientName("WEB_EMBEDDED_PLAYER")
-        .withClientField("clientVersion", "1.20250401.01.00")
+        .withClientField("clientVersion", "2.20260908.01.00")
+        .withUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
         .withUserField("lockedSafetyMode", false);
+
+    protected volatile String visitorData;
 
     public WebEmbedded() {
         super(ClientOptions.DEFAULT);
+    }
+
+    public WebEmbedded(@NotNull ClientOptions options) {
+        super(options);
     }
 
     @Override
@@ -32,43 +39,16 @@ public class WebEmbedded extends Web {
     }
 
     @Override
-    @NotNull
-    public URI transformPlaybackUri(@NotNull URI originalUri, @NotNull URI resolvedPlaybackUri) {
-        return resolvedPlaybackUri;
-    }
-
-    @Override
-    @NotNull
-    public URI transformPlaybackUri(@NotNull URI originalUri, @NotNull URI resolvedPlaybackUri,
-                                    @Nullable String poToken) {
-        if (poToken == null) {
-            return resolvedPlaybackUri;
-        }
-
-        log.debug("Applying 'pot' parameter on playback URI: {}", resolvedPlaybackUri);
-        URIBuilder builder = new URIBuilder(resolvedPlaybackUri);
-        builder.addParameter("pot", poToken);
-
-        try {
-            return builder.build();
-        } catch (URISyntaxException e) {
-            log.debug("Failed to apply 'pot' parameter.", e);
-            return resolvedPlaybackUri;
-        }
-    }
-
-    public WebEmbedded(@NotNull ClientOptions options) {
-        super(options);
-    }
-
-    @Override
     public void preparePlayback(@NotNull YoutubeAudioSourceManager source,
                                 @NotNull HttpInterface httpInterface,
                                 @NotNull String videoId) throws java.io.IOException {
-        RemotePoToken.Result result = source.generatePoToken(httpInterface, null);
-        if (result != null) {
-            requestPoToken = result.getPoToken();
-            requestVisitorData = result.getContentBinding();
+        visitorData = source.getVisitorData();
+        RemotePoToken.Result result = visitorData == null ? null : source.generatePoToken(httpInterface, visitorData);
+        if (result == null) {
+            poToken = null;
+        } else {
+            poToken = result.getPoToken();
+            visitorData = result.getContentBinding();
         }
     }
 
@@ -76,11 +56,11 @@ public class WebEmbedded extends Web {
     @NotNull
     public ClientConfig getBaseClientConfig(@NotNull HttpInterface httpInterface) {
         ClientConfig config = BASE_CONFIG.copy();
-        if (requestVisitorData != null) {
-            config.withVisitorData(requestVisitorData);
+        if (visitorData != null) {
+            config.withVisitorData(visitorData);
         }
-        if (requestPoToken != null) {
-            config.putOnceAndJoin(config.getRoot(), "serviceIntegrityDimensions").put("poToken", requestPoToken);
+        if (poToken != null) {
+            config.putOnceAndJoin(config.getRoot(), "serviceIntegrityDimensions").put("poToken", poToken);
         }
         return config;
     }

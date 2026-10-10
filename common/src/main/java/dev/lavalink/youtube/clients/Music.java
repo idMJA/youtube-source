@@ -64,24 +64,6 @@ public class Music extends MusicClient {
 
     @Override
     @NotNull
-    public URI transformPlaybackUri(@NotNull URI originalUri,
-                                    @NotNull URI resolvedPlaybackUri,
-                                    @Nullable String token) {
-        if (token == null) {
-            return resolvedPlaybackUri;
-        }
-
-        try {
-            return new URIBuilder(resolvedPlaybackUri)
-                .addParameter("pot", token)
-                .build();
-        } catch (URISyntaxException e) {
-            return resolvedPlaybackUri;
-        }
-    }
-
-    @Override
-    @NotNull
     public String getPlayerParams() {
         return WEB_PLAYER_PARAMS;
     }

@@ -139,29 +139,8 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
       }
 
       if (!exceptions.isEmpty()) {
-        for (Client client : clients) {
-          if (!(client instanceof Tv) || !client.getOptions().getPlayback()) {
-            continue;
-          }
-
-          Tv legacyClient = ((Tv) client).createLegacyPlaybackClient(sourceManager.getOauth2Handler().isEnabled());
-          log.debug("All configured clients failed attempting TVHTML5 with itag18");
-          httpInterface.getContext().setAttribute(Client.OAUTH_CLIENT_ATTRIBUTE, legacyClient.supportsOAuth());
-
-          try {
-            processWithClient(localExecutor, httpInterface, legacyClient, 0);
-            return;
-          } catch (Exception e) {
-            log.debug("TVHTML5 itag 18 fallback failed", e);
-          }
-
-          break;
-        }
-
         throw new AllClientsFailedException(exceptions);
       }
-    } catch (CannotBeLoaded e) {
-      throw ExceptionTools.wrapUnfriendlyExceptions("This video is unavailable", Severity.SUSPICIOUS, e.getCause());
     }
   }
 
@@ -175,12 +154,10 @@ public class YoutubeAudioTrack extends DelegatedAudioTrack {
       throw new FriendlyException("This video cannot be played", Severity.SUSPICIOUS, null);
     }
 
-    StreamFormat format = client instanceof Tv && ((Tv) client).isLegacyPlayback()
-        ? formats.getFormatByItag(18)
-        : formats.getBestFormat();
+    StreamFormat format = formats.getBestFormat();
 
     if (format == null) {
-      throw new FriendlyException("This video has no direct itag 18 format", Severity.COMMON, null);
+      throw new FriendlyException("No supported format found", Severity.SUSPICIOUS, null);
     }
 
     if (format.isSabr()) {
