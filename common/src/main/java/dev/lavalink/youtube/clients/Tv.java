@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
 
 public class Tv extends StreamingNonMusicClient {
     private static final Logger log = LoggerFactory.getLogger(Tv.class);
-    private static final String USER_AGENT = "Mozilla/5.0 (PlayStation; PlayStation 4/12.00) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15";
+    private static final String USER_AGENT = "Mozilla/5.0 (ChromiumStylePlatform) Cobalt/Version";
     private static final Pattern LR_POT_ID_PATTERN = Pattern.compile("\"LIVING_ROOM_PO_TOKEN_ID\":\\s*\"([^\"]+)\"");
     private static final String TV_URL = "https://www.youtube.com/tv";
     private static final long SESSION_REFRESH_INTERVAL = TimeUnit.HOURS.toMillis(1);
@@ -130,17 +130,9 @@ public class Tv extends StreamingNonMusicClient {
         visitorData = source.getVisitorData();
 
         if (oauthPlayback) {
-            fetchLivingRoomPoTokenId(httpInterface);
-            RemotePoToken.Result result = source.generatePoToken(httpInterface, livingRoomPoTokenId);
-
-            if (result != null) {
-                poToken = result.getPoToken();
-                requestLivingRoomPoTokenId = livingRoomPoTokenId;
-                log.debug("TVHTML5 Living Room PoToken generated for playback with binding: {}", livingRoomPoTokenId);
-            } else {
-                poToken = null;
-                requestLivingRoomPoTokenId = null;
-            }
+            poToken = null;
+            requestLivingRoomPoTokenId = null;
+            log.debug("TVHTML5 playback with OAuth (Cobalt UA requires no POT)");
         } else {
             requestLivingRoomPoTokenId = null;
             RemotePoToken.Result result = source.generatePoToken(httpInterface, visitorData);

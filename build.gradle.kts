@@ -1,8 +1,5 @@
-import org.ajoberstar.grgit.Grgit
-
 plugins {
     java
-    id("org.ajoberstar.grgit") version "5.2.0"
     alias(libs.plugins.maven.publish.base) apply false
 }
 
@@ -61,18 +58,30 @@ subprojects {
     }
 }
 
-@SuppressWarnings("GrMethodMayBeStatic")
 fun versionFromGit(): Pair<String, Boolean> {
-    Grgit.open(mapOf("currentDir" to project.rootDir)).use { git ->
-        val headTag = git.tag
-            .list()
-            .find { it.commit.id == git.head().id }
+    try {
+        val process = ProcessBuilder("git", "describe", "--tags", "--exact-match")
+            .directory(project.rootDir)
+            .redirectErrorStream(true)
+            .start()
+        val tag = process.inputStream.bufferedReader().readLine()?.trim()
+        val exitCode = process.waitFor()
 
-        val clean = git.status().isClean || System.getenv("CI") != null
-        if (!clean) {
-            logger.lifecycle("Git state is dirty, version is a snapshot.")
+        if (exitCode == 0 && !tag.isNullOrEmpty()) {
+            return tag to true
         }
 
-        return if (headTag != null && clean) headTag.name to true else "${git.head().id}-SNAPSHOT" to false
-    }
+        val revProcess = ProcessBuilder("git", "rev-parse", "HEAD")
+            .directory(project.rootDir)
+            .redirectErrorStream(true)
+            .start()
+        val commitHash = revProcess.inputStream.bufferedReader().readLine()?.trim()
+        revProcess.waitFor()
+
+        if (!commitHash.isNullOrEmpty() && commitHash.matches(Regex("[0-9a-fA-F]{7,40}"))) {
+            return "${commitHash.take(7)}-SNAPSHOT" to false
+        }
+    } catch (_: Exception) {}
+
+    return "HEAD-SNAPSHOT" to false
 }
