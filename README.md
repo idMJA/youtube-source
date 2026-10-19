@@ -36,8 +36,8 @@ This module provides the base source manager, which can be used with any
 
 ```kotlin
 repositories {
-  // replace with https://maven.lavalink.dev/snapshots if you want to use a snapshot version.
-  maven(url = "https://maven.lavalink.dev/releases")
+  // replace with https://maven.mja.moe/snapshots if you want to use a snapshot version.
+  maven(url = "https://maven.mja.moe/releases")
 }
 
 dependencies {
@@ -82,8 +82,8 @@ These clients are suffixed with `Thumbnail`, such as `WebWithThumbnail`, `Androi
 
 ```kotlin
 repositories {
-  // replace with https://maven.lavalink.dev/snapshots if you want to use a snapshot version.
-  maven(url = "https://maven.lavalink.dev/releases")
+  // replace with https://maven.mja.moe/snapshots if you want to use a snapshot version.
+  maven(url = "https://maven.mja.moe/releases")
 }
 
 dependencies {
@@ -113,7 +113,7 @@ lavalink:
   plugins:
     # Replace VERSION with the current version as shown by the Releases tab or a long commit hash for snapshots.
     - dependency: "dev.lavalink.youtube:youtube-plugin:VERSION"
-      repository: "https://maven.lavalink.dev/releases" # use https://maven.lavalink.dev/snapshots if you want to use a snapshot version.
+      repository: "https://maven.mja.moe/releases" # use https://maven.mja.moe/snapshots if you want to use a snapshot version.
 ```
 
 </details>

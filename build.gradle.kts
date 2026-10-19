@@ -1,5 +1,8 @@
+import org.ajoberstar.grgit.Grgit
+
 plugins {
     java
+    id("org.ajoberstar.grgit") version "5.2.0"
     alias(libs.plugins.maven.publish.base) apply false
 }
 
@@ -19,6 +22,8 @@ allprojects {
     repositories {
         mavenLocal()
         mavenCentral()
+        maven(url = "https://maven.mja.moe/releases")
+        maven(url = "https://maven.mja.moe/snapshots")
         maven(url = "https://maven.lavalink.dev/releases")
         maven(url = "https://jitpack.io")
     }
@@ -42,8 +47,8 @@ subprojects {
         val mavenPassword = findProperty("MAVEN_PASSWORD") as String?
         if (!mavenUsername.isNullOrEmpty() && !mavenPassword.isNullOrEmpty()) {
             repositories {
-                val snapshots = "https://maven.lavalink.dev/snapshots"
-                val releases = "https://maven.lavalink.dev/releases"
+                val snapshots = "https://maven.mja.moe/snapshots"
+                val releases = "https://maven.mja.moe/releases"
 
                 maven(if (release) releases else snapshots) {
                     credentials {
@@ -53,35 +58,23 @@ subprojects {
                 }
             }
         } else {
-            logger.lifecycle("Not publishing to maven.lavalink.dev because credentials are not set")
+            logger.lifecycle("Not publishing to maven.mja.moe because credentials are not set")
         }
     }
 }
 
+@SuppressWarnings("GrMethodMayBeStatic")
 fun versionFromGit(): Pair<String, Boolean> {
-    try {
-        val process = ProcessBuilder("git", "describe", "--tags", "--exact-match")
-            .directory(project.rootDir)
-            .redirectErrorStream(true)
-            .start()
-        val tag = process.inputStream.bufferedReader().readLine()?.trim()
-        val exitCode = process.waitFor()
+    Grgit.open(mapOf("currentDir" to project.rootDir)).use { git ->
+        val headTag = git.tag
+            .list()
+            .find { it.commit.id == git.head().id }
 
-        if (exitCode == 0 && !tag.isNullOrEmpty()) {
-            return tag to true
+        val clean = git.status().isClean || System.getenv("CI") != null
+        if (!clean) {
+            logger.lifecycle("Git state is dirty, version is a snapshot.")
         }
 
-        val revProcess = ProcessBuilder("git", "rev-parse", "HEAD")
-            .directory(project.rootDir)
-            .redirectErrorStream(true)
-            .start()
-        val commitHash = revProcess.inputStream.bufferedReader().readLine()?.trim()
-        revProcess.waitFor()
-
-        if (!commitHash.isNullOrEmpty() && commitHash.matches(Regex("[0-9a-fA-F]{7,40}"))) {
-            return "${commitHash.take(7)}-SNAPSHOT" to false
-        }
-    } catch (_: Exception) {}
-
-    return "HEAD-SNAPSHOT" to false
+        return if (headTag != null && clean) headTag.name to true else "${git.head().id}-SNAPSHOT" to false
+    }
 }
