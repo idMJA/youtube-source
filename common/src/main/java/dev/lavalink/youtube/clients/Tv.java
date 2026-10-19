@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
 
 public class Tv extends StreamingNonMusicClient {
     private static final Logger log = LoggerFactory.getLogger(Tv.class);
-    private static final String USER_AGENT = "Mozilla/5.0 (ChromiumStylePlatform) Cobalt/Version";
+    private static final String USER_AGENT = "Mozilla/5.0 (ChromiumStylePlatform) Cobalt/25.lts.30.1034943-gold (unlike Gecko), Unknown_TV_Unknown_0/Unknown (Unknown, Unknown)";
     private static final Pattern LR_POT_ID_PATTERN = Pattern.compile("\"LIVING_ROOM_PO_TOKEN_ID\":\\s*\"([^\"]+)\"");
     private static final String TV_URL = "https://www.youtube.com/tv";
     private static final long SESSION_REFRESH_INTERVAL = TimeUnit.HOURS.toMillis(1);
@@ -135,7 +135,7 @@ public class Tv extends StreamingNonMusicClient {
             log.debug("TVHTML5 playback with OAuth (Cobalt UA requires no POT)");
         } else {
             requestLivingRoomPoTokenId = null;
-            RemotePoToken.Result result = source.generatePoToken(httpInterface, visitorData);
+            RemotePoToken.Result result = source.generatePoToken(httpInterface, visitorData != null ? visitorData : videoId);
 
             if (result != null) {
                 poToken = result.getPoToken();

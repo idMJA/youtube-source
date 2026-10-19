@@ -13,10 +13,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.net.URI;
-import java.net.URISyntaxException;
-import org.apache.http.client.utils.URIBuilder;
-import org.jetbrains.annotations.Nullable;
 
 public class TvHtml5Simply extends StreamingNonMusicClient {
 
@@ -57,7 +53,7 @@ public class TvHtml5Simply extends StreamingNonMusicClient {
     public void preparePlayback(@NotNull YoutubeAudioSourceManager source, @NotNull HttpInterface httpInterface,
                                 @NotNull String videoId) throws java.io.IOException {
         visitorData = source.getVisitorData();
-        RemotePoToken.Result result = visitorData == null ? null : source.generatePoToken(httpInterface, visitorData);
+        RemotePoToken.Result result = source.generatePoToken(httpInterface, visitorData != null ? visitorData : videoId);
         if (result == null) {
             poToken = null;
         } else {

@@ -55,7 +55,7 @@ public class YoutubeAudioSourceManager implements AudioSourceManager {
     public static final String MUSIC_SEARCH_PREFIX = "ytmsearch:";
 
     public static final Client[] DEFAULT_CLIENTS = new Client[] {
-        new Music(), new AndroidVr(), new Web(), new WebEmbedded()
+        new TvHtml5Simply(), new Music(), new Web(), new WebEmbedded(), new AndroidVr()
     };
 
     private static boolean loggedOauthClientNoAccountWarning = false;

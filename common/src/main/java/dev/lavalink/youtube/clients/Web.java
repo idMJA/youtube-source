@@ -18,12 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import org.apache.http.client.utils.URIBuilder;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,7 +32,7 @@ public class Web extends StreamingNonMusicClient {
 
     public static ClientConfig BASE_CONFIG = new ClientConfig()
             .withClientName("WEB")
-            .withClientField("clientVersion", "2.20250403.01.00")
+            .withClientField("clientVersion", "2.20261016.01.00")
             .withUserField("lockedSafetyMode", false);
 
     protected volatile long lastConfigUpdate = -1;

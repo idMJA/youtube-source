@@ -184,20 +184,22 @@ plugins:
 ## Available Clients
 Currently, the following clients are available for use:
 
-| Identifier        | Opus Formats | OAuth/Pot | Age-restriction Support | Playback Support | Metadata Support              | Additional Notes                                     |
-|-------------------|--------------|-----------|-------------------------|------------------|-------------------------------|------------------------------------------------------|
-| `MUSIC`           | No           | Pot       | No                      | Yes              | Search                        | YouTube music search support via `ytmsearch:` prefix |
-| `WEB`             | Yes          | Pot       | No                      | Yes + Livestream | Video, Search, Playlist, Mix  |                                                      |
-| `MWEB`            | Yes          | Pot       | Yes                     | Yes + Livestream | Video, Search, Playlist, Mix  |                                                      |
-| `WEBEMBEDDED`     | Yes          | Pot       | Limited                 | Yes + Livestream | Video                         |                                                      |
-| `ANDROID`         | Yes          | No        | No                      | Yes + Livestream | Video, Search, Playlist, Mix  | Heavily restricted, frequently dysfunctional         |
-| `ANDROID_MUSIC`   | Yes          | No        | No                      | Yes              | Video, Search, Mix            |                                                      |
-| `ANDROID_VR`      | Yes          | No        | No                      | Yes + Livestream | Video, Search, Playlist, Mix  |                                                      |
-| `IOS`             | No           | No        | No                      | Yes + Livestream | Video, Search, Playlist, Mix  |                                                      |
-| `TV`              | Yes          | Yes       | With OAuth              | Yes + Livestream | None                          | Playback requires sign-in                            |
-| `TVHTML5_SIMPLY`  | Yes          | Pot       | No                      | Yes + Livestream | Video, Search, Mix            |                                                      |
-| `TVHTML5_CAST`    | Yes          | Pot       | No                      | Yes + Livestream | Video, Search, Mix            |                                                      |
-| `VISIONOS`        | Yes          | No        | No                      | Yes + Livestream | Video, Search, Mix            |                                                      |
+| Identifier                 | Opus Formats | OAuth/POT | Age-restriction Support | Playback Support | Metadata Support              | Additional Notes                                     |
+|----------------------------|--------------|-----------|-------------------------|------------------|-------------------------------|------------------------------------------------------|
+| `MUSIC`                    | No           | POT       | No                      | Yes              | Search                        | YouTube music search support via `ytmsearch:` prefix |
+| `WEB`                      | Yes          | POT       | No                      | Yes + Livestream | Video, Search, Playlist, Mix  |                                                      |
+| `MWEB`                     | Yes          | POT       | Yes                     | Yes + Livestream | Video, Search, Playlist, Mix  |                                                      |
+| `WEBEMBEDDED`              | Yes          | POT       | Limited                 | Yes + Livestream | Video                         |                                                      |
+| `ANDROID`                  | Yes          | No        | No                      | Yes + Livestream | Video, Search, Playlist, Mix  | Heavily restricted, frequently dysfunctional         |
+| `ANDROID_MUSIC`            | Yes          | No        | No                      | Yes              | Video, Search, Mix            |                                                      |
+| `ANDROID_VR`               | Yes          | No        | No                      | Yes + Livestream | Video, Search, Playlist, Mix  | Often requires login (deprecated)                    |
+| `IOS`                      | No           | No        | No                      | Yes + Livestream | Video, Search, Playlist, Mix  |                                                      |
+| `TV`                       | Yes          | OAuth     | With OAuth              | Yes + Livestream | None                          | Playback requires sign-in                            |
+| `TVHTML5_SIMPLY`           | Yes          | POT       | No                      | Yes + Livestream | Video, Search, Mix            |                                                      |
+| `TVHTML5_SIMPLY_EMBEDDED`  | Yes          | POT       | Yes                     | Yes + Livestream | Video, Search, Mix            |                                                      |
+| `TVHTML5_CAST`             | Yes          | POT       | No                      | Yes + Livestream | Video, Search, Mix            |                                                      |
+| `VISIONOS`                 | Yes          | No        | No                      | Yes + Livestream | Video, Search, Mix            |                                                      |
+| `WEB_SAFARI`               | Yes          | POT       | No                      | Yes + Livestream | Video, Search, Playlist, Mix  |                                                      |
 
 > [!NOTE]
 > Clients that do not return Opus formats will require transcoding.

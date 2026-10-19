@@ -8,19 +8,12 @@ import dev.lavalink.youtube.YoutubeAudioSourceManager;
 import dev.lavalink.youtube.RemotePoToken;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import java.net.URISyntaxException;
-import org.apache.http.client.utils.URIBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.net.URI;
 
 public class WebEmbedded extends Web {
-    private static final Logger log = LoggerFactory.getLogger(WebEmbedded.class);
-
     public static ClientConfig BASE_CONFIG = new ClientConfig()
         .withClientName("WEB_EMBEDDED_PLAYER")
-        .withClientField("clientVersion", "2.20260908.01.00")
-        .withUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        .withClientField("clientVersion", "2.20261016.01.00")
+        .withUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
         .withUserField("lockedSafetyMode", false);
 
     protected volatile String visitorData;
@@ -43,7 +36,7 @@ public class WebEmbedded extends Web {
                                 @NotNull HttpInterface httpInterface,
                                 @NotNull String videoId) throws java.io.IOException {
         visitorData = source.getVisitorData();
-        RemotePoToken.Result result = visitorData == null ? null : source.generatePoToken(httpInterface, visitorData);
+        RemotePoToken.Result result = source.generatePoToken(httpInterface, visitorData != null ? visitorData : videoId);
         if (result == null) {
             poToken = null;
         } else {

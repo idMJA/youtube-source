@@ -130,8 +130,10 @@ public class TrackFormats {
         }
 
         // Format without URL is SABR
-        if (format.getUrl() == null && other.getUrl() != null) {
+        if (format.isSabr() && !other.isSabr()) {
             return false;
+        } else if (!format.isSabr() && other.isSabr()) {
+            return true;
         }
 
         if (MIME_AUDIO_WEBM.equals(info.mimeType) && format.getAudioChannels() > 2) {

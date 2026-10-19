@@ -11,10 +11,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 public class Ios extends StreamingNonMusicClient {
-    public static String CLIENT_VERSION = "21.32.4";
+    public static String CLIENT_VERSION = "21.26.4";
 
     public static ClientConfig BASE_CONFIG = new ClientConfig()
-        .withUserAgent(String.format("com.google.ios.youtube/%s (iPhone16,2; U; CPU iOS 18_1_0 like Mac OS X;)", CLIENT_VERSION))
+        .withUserAgent(String.format("com.google.ios.youtube/%s (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X;)", CLIENT_VERSION))
         .withClientName("IOS")
         .withClientField("clientVersion", CLIENT_VERSION)
         .withUserField("lockedSafetyMode", false);

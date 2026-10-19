@@ -99,6 +99,12 @@ public class YoutubeHttpContextFilter extends BaseYoutubeHttpContextFilter {
       }
 
       request.addHeader("Plugin-Version", pluginVersion);
+    } else if (request.getURI().getHost() != null && request.getURI().getHost().contains("googlevideo")) {
+      request.setHeader("Origin", "https://www.youtube.com");
+      request.setHeader("Referer", "https://www.youtube.com/");
+      request.setHeader("Sec-Fetch-Mode", "cors");
+      request.setHeader("Sec-Fetch-Site", "cross-site");
+      request.setHeader("Sec-Fetch-Dest", "empty");
     } else if (!request.getURI().getHost().contains("googlevideo")) {
       if (userAgent != null) {
         request.setHeader("User-Agent", userAgent);

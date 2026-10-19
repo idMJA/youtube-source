@@ -17,7 +17,7 @@ import java.util.Map;
 public class TvHtml5Cast extends StreamingNonMusicClient {
     public static ClientConfig BASE_CONFIG = new ClientConfig()
             .withClientName("TVHTML5_CAST")
-            .withClientField("clientVersion", "7.20190924")
+            .withClientField("clientVersion", "7.20260707.07.00")
             .withUserAgent("Mozilla/5.0 (Linux; Android) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 CrKey/1.54.248666")
             .withRootField("attestationRequest", new HashMap<String, Object>() {{ put("omitBotguardData", true); }});
 
@@ -52,7 +52,7 @@ public class TvHtml5Cast extends StreamingNonMusicClient {
     public void preparePlayback(@NotNull YoutubeAudioSourceManager source, @NotNull HttpInterface httpInterface,
                                 @NotNull String videoId) throws java.io.IOException {
         visitorData = source.getVisitorData();
-        RemotePoToken.Result result = visitorData == null ? null : source.generatePoToken(httpInterface, visitorData);
+        RemotePoToken.Result result = source.generatePoToken(httpInterface, visitorData != null ? visitorData : videoId);
         if (result == null) {
             poToken = null;
         } else {

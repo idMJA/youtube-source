@@ -136,8 +136,11 @@ public class StreamFormat {
   /**
    * @return Base URL for the playback of this format
    */
-  @NotNull
+  @Nullable
   public URI getUrl() {
+    if (url == null) {
+      return null;
+    }
     try {
       return new URI(url);
     } catch (URISyntaxException e) {

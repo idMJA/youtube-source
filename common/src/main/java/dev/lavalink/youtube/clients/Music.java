@@ -16,7 +16,7 @@ import java.net.URISyntaxException;
 public class Music extends MusicClient {
     public static ClientConfig BASE_CONFIG = new ClientConfig()
         .withClientName("WEB_REMIX")
-        .withClientField("clientVersion", "1.20240724.00.00");
+        .withClientField("clientVersion", "1.20261016.01.00");
 
     protected ClientOptions options;
     private volatile String poToken;
@@ -55,6 +55,11 @@ public class Music extends MusicClient {
     @Nullable
     public String getPoToken() {
         return poToken;
+    }
+
+    @Override
+    protected boolean preferSabrPlayback() {
+        return true;
     }
 
     @Override

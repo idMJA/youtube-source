@@ -17,9 +17,11 @@ public class ClientProviderV4 implements ClientProvider {
         MUSIC(MusicWithThumbnail::new),
         TV(Tv::new), // This has no WithThumbnail companion as it's a playback-only client.
         WEB(WebWithThumbnail::new),
+        WEB_SAFARI(WebSafariWithThumbnail::new),
         WEBEMBEDDED(WebEmbeddedWithThumbnail::new),
         MWEB(MWebWithThumbnail::new),
         TVHTML5_SIMPLY(TvHtml5SimplyWithThumbnail::new),
+        TVHTML5_SIMPLY_EMBEDDED(TvHtml5SimplyEmbeddedWithThumbnail::new),
         TVHTML5_CAST(TvHtml5CastWithThumbnail::new),
         VISIONOS(VisionOsWithThumbnail::new);
 
