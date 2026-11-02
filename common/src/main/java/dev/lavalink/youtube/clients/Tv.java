@@ -32,12 +32,6 @@ import java.util.regex.Pattern;
 public class Tv extends StreamingNonMusicClient {
     private static final Logger log = LoggerFactory.getLogger(Tv.class);
     private static final String USER_AGENT = "Mozilla/5.0 (ChromiumStylePlatform) Cobalt/25.lts.30.1034943-gold (unlike Gecko), Unknown_TV_Unknown_0/Unknown (Unknown, Unknown)";
-    private static final Pattern LR_POT_ID_PATTERN = Pattern.compile("\"LIVING_ROOM_PO_TOKEN_ID\":\\s*\"([^\"]+)\"");
-    private static final String TV_URL = "https://www.youtube.com/tv";
-    private static final long SESSION_REFRESH_INTERVAL = TimeUnit.HOURS.toMillis(1);
-
-    private static volatile String livingRoomPoTokenId;
-    private static volatile long lastSessionUpdate = -1;
 
     public static ClientConfig BASE_CONFIG = new ClientConfig()
         .withClientName("TVHTML5")
@@ -45,10 +39,7 @@ public class Tv extends StreamingNonMusicClient {
         .withClientField("clientVersion", "7.20260707.07.00");
 
     protected ClientOptions options;
-    protected volatile String poToken;
     protected volatile String visitorData;
-    protected volatile String requestLivingRoomPoTokenId;
-    protected volatile boolean oauthPlayback;
 
     public Tv() {
         this(ClientOptions.DEFAULT);
@@ -70,81 +61,20 @@ public class Tv extends StreamingNonMusicClient {
         if (visitorData != null) {
             config.withVisitorData(visitorData);
         }
-        if (requestLivingRoomPoTokenId != null) {
-            Map<String, Object> context = config.putOnceAndJoin(config.getRoot(), "context");
-            Map<String, Object> client = config.putOnceAndJoin(context, "client");
-            client.put("tvAppInfo", Collections.singletonMap("livingRoomPoTokenId", requestLivingRoomPoTokenId));
-        }
-        if (poToken != null) {
-            config.putOnceAndJoin(config.getRoot(), "serviceIntegrityDimensions").put("poToken", poToken);
-        }
         return config;
     }
 
     @Override
     protected boolean preferSabrPlayback() {
-        if (oauthPlayback && requestLivingRoomPoTokenId == null) {
-            return false;
-        }
-        return poToken != null;
-    }
-
-    private static void fetchLivingRoomPoTokenId(@NotNull HttpInterface httpInterface) {
-        long now = System.currentTimeMillis();
-        if (livingRoomPoTokenId != null && now - lastSessionUpdate < SESSION_REFRESH_INTERVAL) return;
-
-        synchronized (Tv.class) {
-            if (livingRoomPoTokenId != null && now - lastSessionUpdate < SESSION_REFRESH_INTERVAL) return;
-
-            HttpGet request = new HttpGet(TV_URL);
-            request.setHeader("User-Agent", USER_AGENT);
-
-            try (CloseableHttpResponse response = httpInterface.execute(request)) {
-                HttpClientTools.assertSuccessWithContent(response, "living room session fetch");
-                String html = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
-                Matcher matcher = LR_POT_ID_PATTERN.matcher(html);
-
-                if (matcher.find()) {
-                    livingRoomPoTokenId = matcher.group(1).replace("\\u003d", "=");
-                    lastSessionUpdate = now;
-                    log.debug("Found living room potoken ID: {}", livingRoomPoTokenId);
-                } else {
-                    log.warn("Unable to find living room potoken ID in TV page");
-                    log.debug("HTML response for LR pot ID: {}", html);
-                }
-            } catch (IOException e) {
-                log.error("Failed to fetch living room session", e);
-            }
-        }
+        return false;
     }
 
     @Override
     public void preparePlayback(@NotNull YoutubeAudioSourceManager source,
                                 @NotNull HttpInterface httpInterface,
                                 @NotNull String videoId) throws IOException {
-
-        oauthPlayback = source.getOauth2Handler().isEnabled();
-
-        log.debug("Preparing TVHTML5 playback with {}", oauthPlayback ? "OAuth" : "visitor data and PoToken");
-
         visitorData = source.getVisitorData();
-
-        if (oauthPlayback) {
-            poToken = null;
-            requestLivingRoomPoTokenId = null;
-            log.debug("TVHTML5 playback with OAuth (Cobalt UA requires no POT)");
-        } else {
-            requestLivingRoomPoTokenId = null;
-            RemotePoToken.Result result = source.generatePoToken(httpInterface, visitorData != null ? visitorData : videoId);
-
-            if (result != null) {
-                poToken = result.getPoToken();
-                visitorData = result.getContentBinding();
-                log.debug("TVHTML5 visitor bound PoToken generated for playback");
-            } else {
-                poToken = null;
-            }
-        }
+        log.debug("TVHTML5 playback prepared with Cobalt UA (zero POT required)");
     }
 
     @Override
@@ -175,7 +105,7 @@ public class Tv extends StreamingNonMusicClient {
     @Override
     @Nullable
     public String getPoToken() {
-        return poToken;
+        return null;
     }
 
     @Override
