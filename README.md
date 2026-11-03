@@ -188,7 +188,7 @@ Currently, the following clients are available for use:
 |----------------------------|--------------|-----------|-------------------------|------------------|-------------------------------|------------------------------------------------------|
 | `MUSIC`                    | No           | POT       | No                      | Yes              | Search                        | YouTube music search support via `ytmsearch:` prefix |
 | `WEB`                      | Yes          | POT       | No                      | Yes + Livestream | Video, Search, Playlist, Mix  |                                                      |
-| `MWEB`                     | Yes          | POT       | Yes                     | Yes + Livestream | Video, Search, Playlist, Mix  |                                                      |
+| `MWEB`                     | Yes          | POT       | Yes                     | Yes + Livestream | Video, Search, Playlist, Mix  | Low audio bitrate (deprecated)                       |
 | `WEBEMBEDDED`              | Yes          | POT       | Limited                 | Yes + Livestream | Video                         |                                                      |
 | `ANDROID`                  | Yes          | No        | No                      | Yes + Livestream | Video, Search, Playlist, Mix  | Heavily restricted, frequently dysfunctional         |
 | `ANDROID_MUSIC`            | Yes          | No        | No                      | Yes              | Video, Search, Mix            |                                                      |
@@ -196,8 +196,8 @@ Currently, the following clients are available for use:
 | `IOS`                      | No           | No        | No                      | Yes + Livestream | Video, Search, Playlist, Mix  |                                                      |
 | `TV`                       | Yes          | OAuth     | With OAuth              | Yes + Livestream | None                          | Playback requires sign-in                            |
 | `TVHTML5_SIMPLY`           | Yes          | POT       | No                      | Yes + Livestream | Video, Search, Mix            |                                                      |
-| `TVHTML5_SIMPLY_EMBEDDED`  | Yes          | POT       | Yes                     | Yes + Livestream | Video, Search, Mix            |                                                      |
-| `TVHTML5_CAST`             | Yes          | POT       | No                      | Yes + Livestream | Video, Search, Mix            |                                                      |
+| `TV_SAMSUNG`               | Yes          | No        | Yes                     | Yes + Livestream | Video, Search, Mix            |                                                      |
+| `TV_TCL`                   | Yes          | POT       | Yes                     | Yes + Livestream | Video, Search, Mix            |                                                      |
 | `VISIONOS`                 | Yes          | No        | No                      | Yes + Livestream | Video, Search, Mix            |                                                      |
 | `WEB_SAFARI`               | Yes          | POT       | No                      | Yes + Livestream | Video, Search, Playlist, Mix  |                                                      |
 

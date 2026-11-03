@@ -27,7 +27,8 @@ public class SabrClientInfo {
         CLIENT_NAME_IDS.put("WEB_EMBEDDED_PLAYER", 56);
         CLIENT_NAME_IDS.put("WEB_REMIX", 67);
         CLIENT_NAME_IDS.put("TVHTML5_SIMPLY", 75);
-        CLIENT_NAME_IDS.put("TVHTML5_SIMPLY_EMBEDDED_PLAYER", 85);
+        CLIENT_NAME_IDS.put("TV_TCL", 7);
+        CLIENT_NAME_IDS.put("TV_SAMSUNG", 7);
     }
 
     public final int clientName;
